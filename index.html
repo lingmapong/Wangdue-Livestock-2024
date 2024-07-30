@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet-svg-shape-markers.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="data/GewogBoundary_2.js"></script>
+        <script src="data/Aquaculture_3.js"></script>
+        <script src="data/Apiculture_4.js"></script>
+        <script src="data/PiggeryFarm_5.js"></script>
+        <script src="data/PoultryBroilerFarm_6.js"></script>
+        <script src="data/PoultryLayerFarm_7.js"></script>
+        <script src="data/MilkProcessingUnits_8.js"></script>
+        <script src="data/AICentres_9.js"></script>
+        <script src="data/LivestockExtensionCentres_10.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[26.206400370640882,89.32601607244831],[28.117670408225397,91.8444239872833]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleSatellite_0');
+        map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
+        var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleSatellite_0;
+        map.addLayer(layer_GoogleSatellite_0);
+        map.createPane('pane_OSMStandard_1');
+        map.getPane('pane_OSMStandard_1').style.zIndex = 401;
+        var layer_OSMStandard_1 = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OSMStandard_1',
+            opacity: 1.0,
+            attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors, CC-BY-SA</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OSMStandard_1;
+        map.addLayer(layer_OSMStandard_1);
+        function pop_GewogBoundary_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FID_'] !== null ? autolinker.link(feature.properties['FID_'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AREA'] !== null ? autolinker.link(feature.properties['AREA'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PERIMETER'] !== null ? autolinker.link(feature.properties['PERIMETER'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BOUND03_'] !== null ? autolinker.link(feature.properties['BOUND03_'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BOUND03_ID'] !== null ? autolinker.link(feature.properties['BOUND03_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DZCODE'] !== null ? autolinker.link(feature.properties['DZCODE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DZONGKHAG'] !== null ? autolinker.link(feature.properties['DZONGKHAG'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['GEOGNAME'] !== null ? autolinker.link(feature.properties['GEOGNAME'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['GEOGCODE'] !== null ? autolinker.link(feature.properties['GEOGCODE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_GewogBoundary_2_0() {
+            return {
+                pane: 'pane_GewogBoundary_2',
+                opacity: 1,
+                color: 'rgba(227,26,28,0.517)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(166,206,227,0.517)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_GewogBoundary_2');
+        map.getPane('pane_GewogBoundary_2').style.zIndex = 402;
+        map.getPane('pane_GewogBoundary_2').style['mix-blend-mode'] = 'normal';
+        var layer_GewogBoundary_2 = new L.geoJson(json_GewogBoundary_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_GewogBoundary_2',
+            layerName: 'layer_GewogBoundary_2',
+            pane: 'pane_GewogBoundary_2',
+            onEachFeature: pop_GewogBoundary_2,
+            style: style_GewogBoundary_2_0,
+        });
+        bounds_group.addLayer(layer_GewogBoundary_2);
+        map.addLayer(layer_GewogBoundary_2);
+        function pop_Aquaculture_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Farm Name</th>\
+                        <td class="visible-with-data" id="Farm Name">' + (feature.properties['Farm Name'] !== null ? autolinker.link(feature.properties['Farm Name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Contact No.</th>\
+                        <td class="visible-with-data" id="CID No">' + (feature.properties['CID No'] !== null ? autolinker.link(feature.properties['CID No'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Location</th>\
+                        <td class="visible-with-data" id="Location">' + (feature.properties['Location'] !== null ? autolinker.link(feature.properties['Location'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Gewog</th>\
+                        <td class="visible-with-data" id="Gewog">' + (feature.properties['Gewog'] !== null ? autolinker.link(feature.properties['Gewog'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">No. of pond</th>\
+                        <td class="visible-with-data" id="No. of pon">' + (feature.properties['No. of pon'] !== null ? autolinker.link(feature.properties['No. of pon'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Total Pond Area (Sq.m)</th>\
+                        <td class="visible-with-data" id="Total pond">' + (feature.properties['Total pond'] !== null ? autolinker.link(feature.properties['Total pond'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Year Established</th>\
+                        <td class="visible-with-data" id="Year estab">' + (feature.properties['Year estab'] !== null ? autolinker.link(feature.properties['Year estab'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Source of Funding</th>\
+                        <td class="visible-with-data" id="Fund suppo">' + (feature.properties['Fund suppo'] !== null ? autolinker.link(feature.properties['Fund suppo'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Current Farm Status</th>\
+                        <td class="visible-with-data" id="Farm Statu">' + (feature.properties['Farm Statu'] !== null ? autolinker.link(feature.properties['Farm Statu'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Aquaculture_3_0() {
+            return {
+                pane: 'pane_Aquaculture_3',
+                shape: 'triangle',
+                radius: 5.6,
+                opacity: 1,
+                color: 'rgba(227,26,28,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,143,72,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Aquaculture_3');
+        map.getPane('pane_Aquaculture_3').style.zIndex = 403;
+        map.getPane('pane_Aquaculture_3').style['mix-blend-mode'] = 'normal';
+        var layer_Aquaculture_3 = new L.geoJson(json_Aquaculture_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Aquaculture_3',
+            layerName: 'layer_Aquaculture_3',
+            pane: 'pane_Aquaculture_3',
+            onEachFeature: pop_Aquaculture_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_Aquaculture_3_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Aquaculture_3);
+        map.addLayer(layer_Aquaculture_3);
+        function pop_Apiculture_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Farm Name</th>\
+                        <td class="visible-with-data" id="Farm Name">' + (feature.properties['Farm Name'] !== null ? autolinker.link(feature.properties['Farm Name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Contact No</th>\
+                        <td class="visible-with-data" id="Contact No">' + (feature.properties['Contact No'] !== null ? autolinker.link(feature.properties['Contact No'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Location</th>\
+                        <td class="visible-with-data" id="Location">' + (feature.properties['Location'] !== null ? autolinker.link(feature.properties['Location'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Gewog</th>\
+                        <td class="visible-with-data" id="Gewog">' + (feature.properties['Gewog'] !== null ? autolinker.link(feature.properties['Gewog'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">No. of Improved Beehives</th>\
+                        <td class="visible-with-data" id="Improved b">' + (feature.properties['Improved b'] !== null ? autolinker.link(feature.properties['Improved b'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">No. of Local Beehives</th>\
+                        <td class="visible-with-data" id="Local beeh">' + (feature.properties['Local beeh'] !== null ? autolinker.link(feature.properties['Local beeh'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Total no. of Beehives</th>\
+                        <td class="visible-with-data" id="Total beeh">' + (feature.properties['Total beeh'] !== null ? autolinker.link(feature.properties['Total beeh'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Year Established</th>\
+                        <td class="visible-with-data" id="Year estab">' + (feature.properties['Year estab'] !== null ? autolinker.link(feature.properties['Year estab'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Source of Funding</th>\
+                        <td class="visible-with-data" id="Source of">' + (feature.properties['Source of'] !== null ? autolinker.link(feature.properties['Source of'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Apiculture_4_0() {
+            return {
+                pane: 'pane_Apiculture_4',
+        rotationAngle: 0.0,
+        rotationOrigin: 'center center',
+        icon: L.icon({
+            iconUrl: 'markers/Apiculture_4.svg',
+            iconSize: [24.32, 24.32]
+        }),
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Apiculture_4');
+        map.getPane('pane_Apiculture_4').style.zIndex = 404;
+        map.getPane('pane_Apiculture_4').style['mix-blend-mode'] = 'normal';
+        var layer_Apiculture_4 = new L.geoJson(json_Apiculture_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Apiculture_4',
+            layerName: 'layer_Apiculture_4',
+            pane: 'pane_Apiculture_4',
+            onEachFeature: pop_Apiculture_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.marker(latlng, style_Apiculture_4_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Apiculture_4);
+        map.addLayer(layer_Apiculture_4);
+        function pop_PiggeryFarm_5(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Farm Name</th>\
+                        <td class="visible-with-data" id="Farm Name">' + (feature.properties['Farm Name'] !== null ? autolinker.link(feature.properties['Farm Name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Farm Location</th>\
+                        <td class="visible-with-data" id="Location">' + (feature.properties['Location'] !== null ? autolinker.link(feature.properties['Location'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Gewog</th>\
+                        <td class="visible-with-data" id="Gewog">' + (feature.properties['Gewog'] !== null ? autolinker.link(feature.properties['Gewog'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Contact No</th>\
+                        <td class="visible-with-data" id="Contact No">' + (feature.properties['Contact No'] !== null ? autolinker.link(feature.properties['Contact No'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Farm Type</th>\
+                        <td class="visible-with-data" id="Farm type">' + (feature.properties['Farm type'] !== null ? autolinker.link(feature.properties['Farm type'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Farm Category</th>\
+                        <td class="visible-with-data" id="Farm categ">' + (feature.properties['Farm categ'] !== null ? autolinker.link(feature.properties['Farm categ'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Current stock position</th>\
+                        <td class="visible-with-data" id="Current st">' + (feature.properties['Current st'] !== null ? autolinker.link(feature.properties['Current st'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Year Established</th>\
+                        <td class="visible-with-data" id="Year estab">' + (feature.properties['Year estab'] !== null ? autolinker.link(feature.properties['Year estab'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Source of Funding</th>\
+                        <td class="visible-with-data" id="Funding so">' + (feature.properties['Funding so'] !== null ? autolinker.link(feature.properties['Funding so'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_PiggeryFarm_5_0() {
+            return {
+                pane: 'pane_PiggeryFarm_5',
+                radius: 5.2,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,99,255,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_PiggeryFarm_5');
+        map.getPane('pane_PiggeryFarm_5').style.zIndex = 405;
+        map.getPane('pane_PiggeryFarm_5').style['mix-blend-mode'] = 'normal';
+        var layer_PiggeryFarm_5 = new L.geoJson(json_PiggeryFarm_5, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_PiggeryFarm_5',
+            layerName: 'layer_PiggeryFarm_5',
+            pane: 'pane_PiggeryFarm_5',
+            onEachFeature: pop_PiggeryFarm_5,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_PiggeryFarm_5_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_PiggeryFarm_5);
+        map.addLayer(layer_PiggeryFarm_5);
+        function pop_PoultryBroilerFarm_6(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Farm Name</th>\
+                        <td class="visible-with-data" id="Farm Name">' + (feature.properties['Farm Name'] !== null ? autolinker.link(feature.properties['Farm Name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Contact No</th>\
+                        <td class="visible-with-data" id="Contact No">' + (feature.properties['Contact No'] !== null ? autolinker.link(feature.properties['Contact No'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Location</th>\
+                        <td class="visible-with-data" id="Location">' + (feature.properties['Location'] !== null ? autolinker.link(feature.properties['Location'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Gewog</th>\
+                        <td class="visible-with-data" id="Gewog">' + (feature.properties['Gewog'] !== null ? autolinker.link(feature.properties['Gewog'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Farm Category</th>\
+                        <td class="visible-with-data" id="Farm categ">' + (feature.properties['Farm categ'] !== null ? autolinker.link(feature.properties['Farm categ'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Current birds stock</th>\
+                        <td class="visible-with-data" id="Current st">' + (feature.properties['Current st'] !== null ? autolinker.link(feature.properties['Current st'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Years Established</th>\
+                        <td class="visible-with-data" id="Year estab">' + (feature.properties['Year estab'] !== null ? autolinker.link(feature.properties['Year estab'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Source of Funding</th>\
+                        <td class="visible-with-data" id="Source of">' + (feature.properties['Source of'] !== null ? autolinker.link(feature.properties['Source of'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_PoultryBroilerFarm_6_0() {
+            return {
+                pane: 'pane_PoultryBroilerFarm_6',
+                radius: 5.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,127,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_PoultryBroilerFarm_6');
+        map.getPane('pane_PoultryBroilerFarm_6').style.zIndex = 406;
+        map.getPane('pane_PoultryBroilerFarm_6').style['mix-blend-mode'] = 'normal';
+        var layer_PoultryBroilerFarm_6 = new L.geoJson(json_PoultryBroilerFarm_6, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_PoultryBroilerFarm_6',
+            layerName: 'layer_PoultryBroilerFarm_6',
+            pane: 'pane_PoultryBroilerFarm_6',
+            onEachFeature: pop_PoultryBroilerFarm_6,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_PoultryBroilerFarm_6_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_PoultryBroilerFarm_6);
+        map.addLayer(layer_PoultryBroilerFarm_6);
+        function pop_PoultryLayerFarm_7(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Farm Name</th>\
+                        <td class="visible-with-data" id="Farm Name">' + (feature.properties['Farm Name'] !== null ? autolinker.link(feature.properties['Farm Name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Contact No</th>\
+                        <td class="visible-with-data" id="Contact No">' + (feature.properties['Contact No'] !== null ? autolinker.link(feature.properties['Contact No'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Farm Location</th>\
+                        <td class="visible-with-data" id="Location">' + (feature.properties['Location'] !== null ? autolinker.link(feature.properties['Location'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Gewog</th>\
+                        <td class="visible-with-data" id="Gewog">' + (feature.properties['Gewog'] !== null ? autolinker.link(feature.properties['Gewog'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Farm Category</th>\
+                        <td class="visible-with-data" id="Farm Categ">' + (feature.properties['Farm Categ'] !== null ? autolinker.link(feature.properties['Farm Categ'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Current birds stock</th>\
+                        <td class="visible-with-data" id="Current st">' + (feature.properties['Current st'] !== null ? autolinker.link(feature.properties['Current st'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Years Established</th>\
+                        <td class="visible-with-data" id="Year estab">' + (feature.properties['Year estab'] !== null ? autolinker.link(feature.properties['Year estab'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Source of Funding</th>\
+                        <td class="visible-with-data" id="Funding so">' + (feature.properties['Funding so'] !== null ? autolinker.link(feature.properties['Funding so'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_PoultryLayerFarm_7_0() {
+            return {
+                pane: 'pane_PoultryLayerFarm_7',
+                radius: 5.2,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,80,180,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_PoultryLayerFarm_7');
+        map.getPane('pane_PoultryLayerFarm_7').style.zIndex = 407;
+        map.getPane('pane_PoultryLayerFarm_7').style['mix-blend-mode'] = 'normal';
+        var layer_PoultryLayerFarm_7 = new L.geoJson(json_PoultryLayerFarm_7, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_PoultryLayerFarm_7',
+            layerName: 'layer_PoultryLayerFarm_7',
+            pane: 'pane_PoultryLayerFarm_7',
+            onEachFeature: pop_PoultryLayerFarm_7,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_PoultryLayerFarm_7_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_PoultryLayerFarm_7);
+        map.addLayer(layer_PoultryLayerFarm_7);
+        function pop_MilkProcessingUnits_8(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Name of MPU</th>\
+                        <td class="visible-with-data" id="Name of MP">' + (feature.properties['Name of MP'] !== null ? autolinker.link(feature.properties['Name of MP'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Location</th>\
+                        <td class="visible-with-data" id="Location">' + (feature.properties['Location'] !== null ? autolinker.link(feature.properties['Location'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Gewog</th>\
+                        <td class="visible-with-data" id="Gewog">' + (feature.properties['Gewog'] !== null ? autolinker.link(feature.properties['Gewog'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Name of Focal Person</th>\
+                        <td class="visible-with-data" id="Name of Ch">' + (feature.properties['Name of Ch'] !== null ? autolinker.link(feature.properties['Name of Ch'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Contact No</th>\
+                        <td class="visible-with-data" id="Contact No">' + (feature.properties['Contact No'] !== null ? autolinker.link(feature.properties['Contact No'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">No. of Members</th>\
+                        <td class="visible-with-data" id="No.of memb">' + (feature.properties['No.of memb'] !== null ? autolinker.link(feature.properties['No.of memb'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Year Established</th>\
+                        <td class="visible-with-data" id="Year estab">' + (feature.properties['Year estab'] !== null ? autolinker.link(feature.properties['Year estab'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Products Processed & Sold</th>\
+                        <td class="visible-with-data" id="Products">' + (feature.properties['Products'] !== null ? autolinker.link(feature.properties['Products'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_MilkProcessingUnits_8_0() {
+            return {
+                pane: 'pane_MilkProcessingUnits_8',
+                shape: 'square',
+                radius: 4.8,
+                opacity: 1,
+                color: 'rgba(51,80,180,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(180,51,115,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_MilkProcessingUnits_8');
+        map.getPane('pane_MilkProcessingUnits_8').style.zIndex = 408;
+        map.getPane('pane_MilkProcessingUnits_8').style['mix-blend-mode'] = 'normal';
+        var layer_MilkProcessingUnits_8 = new L.geoJson(json_MilkProcessingUnits_8, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_MilkProcessingUnits_8',
+            layerName: 'layer_MilkProcessingUnits_8',
+            pane: 'pane_MilkProcessingUnits_8',
+            onEachFeature: pop_MilkProcessingUnits_8,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_MilkProcessingUnits_8_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_MilkProcessingUnits_8);
+        map.addLayer(layer_MilkProcessingUnits_8);
+        function pop_AICentres_9(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Name of AI Centre</th>\
+                        <td class="visible-with-data" id="AI Centre">' + (feature.properties['AI Centre'] !== null ? autolinker.link(feature.properties['AI Centre'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Gewog</th>\
+                        <td class="visible-with-data" id="Gewog">' + (feature.properties['Gewog'] !== null ? autolinker.link(feature.properties['Gewog'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Total Cattle Population</th>\
+                        <td class="visible-with-data" id="Total Catt">' + (feature.properties['Total Catt'] !== null ? autolinker.link(feature.properties['Total Catt'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Female Cattle Population</th>\
+                        <td class="visible-with-data" id="Female Cat">' + (feature.properties['Female Cat'] !== null ? autolinker.link(feature.properties['Female Cat'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_AICentres_9_0() {
+            return {
+                pane: 'pane_AICentres_9',
+        rotationAngle: 0.0,
+        rotationOrigin: 'center center',
+        icon: L.icon({
+            iconUrl: 'markers/AICentres_9.svg',
+            iconSize: [23.56, 23.56]
+        }),
+                interactive: true,
+            }
+        }
+        map.createPane('pane_AICentres_9');
+        map.getPane('pane_AICentres_9').style.zIndex = 409;
+        map.getPane('pane_AICentres_9').style['mix-blend-mode'] = 'normal';
+        var layer_AICentres_9 = new L.geoJson(json_AICentres_9, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_AICentres_9',
+            layerName: 'layer_AICentres_9',
+            pane: 'pane_AICentres_9',
+            onEachFeature: pop_AICentres_9,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.marker(latlng, style_AICentres_9_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_AICentres_9);
+        map.addLayer(layer_AICentres_9);
+        function pop_LivestockExtensionCentres_10(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Name of Gewog</th>\
+                        <td class="visible-with-data" id="Gewog">' + (feature.properties['Gewog'] !== null ? autolinker.link(feature.properties['Gewog'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Name of Livestock Incharge</th>\
+                        <td class="visible-with-data" id="Name of Li">' + (feature.properties['Name of Li'] !== null ? autolinker.link(feature.properties['Name of Li'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Corresponding Email ID</th>\
+                        <td class="visible-with-data" id="Email ID">' + (feature.properties['Email ID'] !== null ? autolinker.link(feature.properties['Email ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Cattle</th>\
+                        <td class="visible-with-data" id="Cattle">' + (feature.properties['Cattle'] !== null ? autolinker.link(feature.properties['Cattle'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Yak</th>\
+                        <td class="visible-with-data" id="Yak">' + (feature.properties['Yak'] !== null ? autolinker.link(feature.properties['Yak'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Pig</th>\
+                        <td class="visible-with-data" id="Pig">' + (feature.properties['Pig'] !== null ? autolinker.link(feature.properties['Pig'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Poultry</th>\
+                        <td class="visible-with-data" id="Poultry">' + (feature.properties['Poultry'] !== null ? autolinker.link(feature.properties['Poultry'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Sheep</th>\
+                        <td class="visible-with-data" id="Sheep">' + (feature.properties['Sheep'] !== null ? autolinker.link(feature.properties['Sheep'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Goat</th>\
+                        <td class="visible-with-data" id="Goat">' + (feature.properties['Goat'] !== null ? autolinker.link(feature.properties['Goat'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Equine</th>\
+                        <td class="visible-with-data" id="Equine">' + (feature.properties['Equine'] !== null ? autolinker.link(feature.properties['Equine'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_LivestockExtensionCentres_10_0() {
+            return {
+                pane: 'pane_LivestockExtensionCentres_10',
+                shape: 'triangle',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(248,248,7,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,0,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_LivestockExtensionCentres_10');
+        map.getPane('pane_LivestockExtensionCentres_10').style.zIndex = 410;
+        map.getPane('pane_LivestockExtensionCentres_10').style['mix-blend-mode'] = 'normal';
+        var layer_LivestockExtensionCentres_10 = new L.geoJson(json_LivestockExtensionCentres_10, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_LivestockExtensionCentres_10',
+            layerName: 'layer_LivestockExtensionCentres_10',
+            pane: 'pane_LivestockExtensionCentres_10',
+            onEachFeature: pop_LivestockExtensionCentres_10,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.shapeMarker(latlng, style_LivestockExtensionCentres_10_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_LivestockExtensionCentres_10);
+        map.addLayer(layer_LivestockExtensionCentres_10);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var baseMaps = {};
+        var overlaysTree = [
+            {label: '<img src="legend/LivestockExtensionCentres_10.png" /> Livestock Extension Centres', layer: layer_LivestockExtensionCentres_10},
+            {label: '<img src="legend/AICentres_9.png" /> AI Centres', layer: layer_AICentres_9},
+            {label: '<img src="legend/MilkProcessingUnits_8.png" /> Milk Processing Units', layer: layer_MilkProcessingUnits_8},
+            {label: '<img src="legend/PoultryLayerFarm_7.png" /> Poultry Layer Farm', layer: layer_PoultryLayerFarm_7},
+            {label: '<img src="legend/PoultryBroilerFarm_6.png" /> Poultry Broiler Farm', layer: layer_PoultryBroilerFarm_6},
+            {label: '<img src="legend/PiggeryFarm_5.png" /> Piggery Farm', layer: layer_PiggeryFarm_5},
+            {label: '<img src="legend/Apiculture_4.png" /> Apiculture', layer: layer_Apiculture_4},
+            {label: '<img src="legend/Aquaculture_3.png" /> Aquaculture', layer: layer_Aquaculture_3},
+            {label: '<img src="legend/GewogBoundary_2.png" /> Gewog Boundary', layer: layer_GewogBoundary_2},
+            {label: "OSM Standard", layer: layer_OSMStandard_1},
+            {label: "Google Satellite", layer: layer_GoogleSatellite_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: false, 
+        });
+        lay.addTo(map);
+        setBounds();
+        map.addControl(new L.Control.Search({
+            layer: layer_GewogBoundary_2,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'GEOGNAME'}));
+        document.getElementsByClassName('search-button')[0].className +=
+         ' fa fa-binoculars';
+        </script>
+    </body>
+</html>
